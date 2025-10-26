@@ -1,0 +1,3 @@
+-- Add a new column 'mood' to the 'emotions' table
+-- ALTER TABLE emotions ADD COLUMN mood TEXT DEFAULT NULL;
+-- file should be in format date_description.sql

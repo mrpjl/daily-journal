@@ -3,3 +3,6 @@ data/
 *.db
 *.log
 .env
+localhost*
+index.css
+index.js

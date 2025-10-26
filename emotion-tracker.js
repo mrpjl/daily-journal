@@ -1,10 +1,21 @@
-const START_DATE = new Date('2025-10-20');
-const API_URL = 'http://localhost:3000/api'; // Ensure this is correct
+const START_DATE = new Date('2025-05-01');
+const API_URL = 'http://localhost:3000/api'; // Ensure this matches the server's base URL
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Application initialized. Loading heatmap...');
+    
+    // Add meta description for SEO
+    const metaDescription = document.createElement('meta');
+    metaDescription.name = 'description';
+    metaDescription.content = 'Track your daily emotions and visualize them in a heatmap. Add notes and tags to reflect on your emotional journey.';
+    document.head.appendChild(metaDescription);
+
     document.getElementById('date').valueAsDate = new Date();
+
+    // Attach the addEntry function to the button
+    document.getElementById('addEntryButton').addEventListener('click', addEntry);
+
     await renderHeatMap();
     console.log('Heatmap loaded successfully.');
 });
@@ -48,17 +59,17 @@ function getEmotionState(score) {
 }
 
 async function loadData() {
-    console.log('Fetching emotion data from the server...');
+    console.log('Fetching scores for heatmap from the server...');
     try {
-        const response = await fetch(`${API_URL}/emotions`);
+        const response = await fetch(`${API_URL}/emotions/heatmap`);
         if (!response.ok) {
-            throw new Error('Failed to load data');
+            throw new Error('Failed to load heatmap data');
         }
-        console.log('Emotion data fetched successfully.');
+        console.log('Scores for heatmap fetched successfully.');
         return await response.json();
     } catch (error) {
-        console.error('Error loading data:', error);
-        alert('Failed to load emotion data. Make sure the server is running.');
+        console.error('Error loading heatmap data:', error);
+        alert('Failed to load heatmap data. Make sure the server is running.');
         return {};
     }
 }
@@ -91,7 +102,11 @@ async function addEntry() {
     const dateInput = document.getElementById('date').value;
     const emotionInput = parseInt(document.getElementById('emotion').value);
     const notesInput = document.getElementById('notes').value;
-    const tagsInput = document.getElementById('tags').value;
+
+    // Collect selected tags
+    const tags = Array.from(document.querySelectorAll('#tagsCheckboxes input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.value)
+        .join('-');
 
     console.log('Adding new entry...');
     if (!dateInput || isNaN(emotionInput)) {
@@ -106,8 +121,14 @@ async function addEntry() {
         return;
     }
 
+    if (!tags) {
+        console.warn('Validation failed: No tags selected.');
+        alert('Please select at least one tag');
+        return;
+    }
+
     try {
-        await saveData(dateInput, emotionInput, notesInput, tagsInput);
+        await saveData(dateInput, emotionInput, notesInput, tags);
         await renderHeatMap();
         console.log('New entry added successfully.');
         alert('Entry added successfully!');
@@ -209,20 +230,21 @@ async function renderHeatMap() {
     const heatMapWrapper = document.querySelector('.heat-map-wrapper');
     heatMapWrapper.innerHTML = '';
 
-    const data = await loadData();
+    // Fetch heatmap data for hover events
+    const heatmapData = await loadData(); // Fetch from /api/emotions/heatmap
     const today = new Date();
     const currentDate = new Date(START_DATE);
 
     let currentMonth = currentDate.getMonth();
-    let monthBox = document.createElement('div');
-    monthBox.className = 'month-box';
+    let monthSection = null;
+    let monthBox = null;
 
     while (currentDate <= today) {
         const dateStr = currentDate.toISOString().split('T')[0];
-        const entries = data[dateStr] || [];
+        const scores = heatmapData[dateStr] || [];
 
-        const averageScore = entries.length > 0
-            ? entries.reduce((sum, entry) => sum + entry.score, 0) / entries.length
+        const averageScore = scores.length > 0
+            ? scores.reduce((sum, score) => sum + score, 0) / scores.length
             : null;
 
         const averageEmotion = averageScore !== null ? getEmotionState(Math.round(averageScore)) : 'No entry';
@@ -238,27 +260,58 @@ async function renderHeatMap() {
             year: 'numeric'
         });
 
-        const tooltipText = entries.length > 0
+        const tooltipText = scores.length > 0
             ? `${formattedDate}: Overall ${averageEmotion} (Avg. Score: ${averageScore.toFixed(2)})`
             : `${formattedDate}: No entry`;
 
+        // Hover event to show tooltip
         cell.addEventListener('mouseenter', () => showTooltip(cell, tooltipText));
         cell.addEventListener('mouseleave', hideTooltip);
 
-        cell.addEventListener('click', () => {
-            console.log(`Date clicked: ${formattedDate}`);
-            displayNotes(formattedDate, entries);
+        // Click event to fetch detailed data from /api/emotions for the selected date
+        cell.addEventListener('click', async () => {
+            console.log(`Fetching detailed data for ${formattedDate}...`);
+            try {
+                const response = await fetch(`${API_URL}/emotions?date=${dateStr}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch detailed data');
+                }
+                const detailedData = await response.json();
+                const entries = detailedData[dateStr] || [];
+                displayNotes(formattedDate, entries);
+            } catch (error) {
+                console.error('Error fetching detailed data:', error);
+                alert('Failed to fetch detailed data. Make sure the server is running.');
+            }
         });
 
+        // Create a new month section if the month changes or if it's the first iteration
+        if (!monthSection || currentDate.getMonth() !== currentMonth) {
+            monthSection = document.createElement('div');
+            monthSection.className = 'month-section';
+
+            // Add month label
+            const monthLabel = document.createElement('div');
+            monthLabel.className = 'month-label';
+            monthLabel.textContent = currentDate.toLocaleDateString('en-US', {
+                month: 'short',
+                year: '2-digit'
+            });
+            monthSection.appendChild(monthLabel);
+
+            // Add the month box
+            monthBox = document.createElement('div');
+            monthBox.className = 'month-box';
+            monthSection.appendChild(monthBox);
+
+            heatMapWrapper.appendChild(monthSection);
+            currentMonth = currentDate.getMonth();
+        }
+
+        // Append the day cell to the current month's box
         monthBox.appendChild(cell);
 
         currentDate.setDate(currentDate.getDate() + 1);
-        if (currentDate.getMonth() !== currentMonth || currentDate > today) {
-            heatMapWrapper.appendChild(monthBox);
-            monthBox = document.createElement('div');
-            monthBox.className = 'month-box';
-            currentMonth = currentDate.getMonth();
-        }
     }
     console.log('Heatmap rendered successfully.');
 }
@@ -298,7 +351,6 @@ function displayNotes(date, notesList) {
             <ul>
                 ${notes.map(note => `
                     <li>
-                        
                         ${renderMarkdown(note.notes)}
                     </li>
                 `).join('')}
@@ -307,3 +359,70 @@ function displayNotes(date, notesList) {
         `)
         .join('');
 }
+
+async function searchNotes(query) {
+    console.log(`Searching notes for query: "${query}"`);
+    try {
+        const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`);
+        if (!response.ok) {
+            throw new Error('Failed to search notes');
+        }
+        const results = await response.json();
+        displaySearchResults(results, query);
+    } catch (error) {
+        console.error('Error searching notes:', error);
+        alert('Failed to search notes. Make sure the server is running.');
+    }
+}
+
+function displaySearchResults(results, query) {
+    const searchResults = document.getElementById('searchResults');
+    if (results.length === 0) {
+        searchResults.innerHTML = '<p>No matching notes found.</p>';
+        return;
+    }
+
+    const highlightQuery = (text, query) => {
+        const regex = new RegExp(`(${query})`, 'gi'); // Case-insensitive match
+        return text.replace(regex, '<mark>$1</mark>'); // Highlight the matching word
+    };
+
+    const filterAndFormatText = (text) => {
+        return text
+            .split('\n') // Split notes into lines
+            .filter(line => line.toLowerCase().includes(query.toLowerCase())) // Keep only lines with the query
+            .map(line => highlightQuery(line, query)) // Highlight the query in matching lines
+            .join('<br>'); // Join the filtered lines with <br> for HTML rendering
+    };
+
+    searchResults.innerHTML = `
+        <ul>
+            ${results.map(result => {
+                const filteredNotes = filterAndFormatText(result.notes);
+                if (!filteredNotes) return ''; // Skip if no lines match the query
+                return `
+                    <li>
+                        <strong>${result.date}:</strong><br>
+                        ${filteredNotes}
+                    </li>
+                `;
+            }).join('')}
+        </ul>
+    `;
+}
+
+// Attach search functionality
+document.getElementById('searchButton').addEventListener('click', () => {
+    const query = document.getElementById('searchInput').value.trim();
+    if (!query) {
+        alert('Please enter a search query.');
+        return;
+    }
+    searchNotes(query);
+});
+
+document.getElementById('refreshButton').addEventListener('click', () => {
+    console.log('Refreshing search results...');
+    document.getElementById('searchInput').value = ''; // Clear the search input field
+    document.getElementById('searchResults').innerHTML = ''; // Clear the search results
+});

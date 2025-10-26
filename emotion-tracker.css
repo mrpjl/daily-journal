@@ -9,7 +9,8 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     padding: 20px;
-    background: #f6f8fa;
+    background: #f5f5f5; /* Slightly darker background for better contrast */
+    color: #1a1a1a; /* Darker text color */
 }
 
 /* Container */
@@ -54,7 +55,7 @@ label {
     display: block;
     margin-bottom: 5px;
     font-weight: 600;
-    color: #24292e;
+    color: #1a1a1a; /* Darker label text for better contrast */
     font-size: 14px;
 }
 
@@ -77,24 +78,9 @@ input[type="text"]:focus {
     box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
 }
 
-select {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #d1d5da;
-    border-radius: 6px;
-    font-size: 14px;
-    background: white;
-}
-
-select:focus {
-    outline: none;
-    border-color: #0969da;
-    box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
-}
-
 button {
-    background: #2da44e;
-    color: white;
+    background: #22863a; /* Darker green for better contrast */
+    color: #ffffff; /* Ensure text is white for contrast */
     padding: 8px 16px;
     border: none;
     border-radius: 6px;
@@ -104,12 +90,58 @@ button {
 }
 
 button:hover {
-    background: #2c974b;
+    background: #176f2c; /* Slightly darker hover color */
+}
+
+/* Search Section */
+.search-section {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f6f8fa;
+    border-radius: 6px;
+    border: 1px solid #e1e4e8;
+}
+
+.search-section h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #24292e;
+    font-weight: 600;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5da;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+#searchButton {
+    background: #0366d6;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#searchButton:hover {
+    background: #024ea2;
+}
+
+#searchResults {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #24292e;
 }
 
 /* Heat Map Container */
 .heat-map-container {
-    margin-top: 20px;
+    margin-top: 10px;
     overflow-x: auto; /* Enable horizontal scrolling */
     white-space: nowrap; /* Prevent wrapping */
     padding-bottom: 10px;
@@ -118,19 +150,34 @@ button:hover {
 /* Heat Map Wrapper */
 .heat-map-wrapper {
     display: flex;
-    flex-wrap: wrap; /* Allow wrapping for months */
-    gap: 10px; /* Add spacing between months */
+    flex-wrap: wrap; /* Wrap months into multiple rows */
+    gap: 0%; /* Reduce spacing between months */
+    justify-content: center; /* Center the heatmap */
+    max-width: 100%; /* Ensure the heatmap fits within the viewport */
+}
+
+/* Month Section */
+.month-section {
+    display: flex;
+    flex-direction: column; /* Stack month label and heatmap */
+    align-items: center; /* Center-align the month label and heatmap */
+    gap: 3px; /* Further reduce spacing between the label and the heatmap */
+    width: 95px; /* Slightly reduce the width of each month section */
+}
+
+.month-label {
+    font-size: 10px; /* Reduce font size */
+    font-weight: normal; /* Remove bold styling */
+    color: #57606a; /* Use a lighter color for less emphasis */
+    text-align: center; /* Center-align the month label */
 }
 
 /* Month Box */
 .month-box {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(11px, 1fr)); /* Clubbed layout */
-    gap: 3px;
-    padding: 5px;
-    border: 2px solid #d1d5da; /* Highlight each month */
-    border-radius: 6px;
-    background: #ffffff; /* Optional: Add a background color */
+    grid-template-rows: repeat(7, 1fr); /* 7 rows for days of the week */
+    grid-auto-flow: column; /* Columns flow horizontally */
+    gap: 2px; /* Reduce spacing between day cells */
 }
 
 /* Heat Map */
@@ -143,27 +190,15 @@ button:hover {
 
 /* Day Labels */
 .days-labels {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    margin-right: 8px;
-    padding-top: 0;
-}
-
-.days-labels span {
-    font-size: 10px;
-    color: #57606a;
-    height: 13px;
-    line-height: 13px;
-    text-align: right;
+    display: none; /* Hide unused day labels */
 }
 
 /* Day Cell */
 .day-cell {
-    width: 11px;
-    height: 11px;
-    border-radius: 2px;
-    background: #ebedf0;
+    width: 10px; /* Reduce the width of day cells */
+    height: 10px; /* Reduce the height of day cells */
+    border-radius: 2px; /* Slightly rounded corners */
+    background: #ebedf0; /* Default background color */
     cursor: pointer;
     position: relative;
 }
@@ -214,8 +249,8 @@ button:hover {
 }
 
 .legend-color {
-    width: 15px;
-    height: 15px;
+    width: 10px;
+    height: 10px;
     border-radius: 2px;
 }
 
@@ -241,7 +276,7 @@ button:hover {
 }
 
 .legend-color:nth-child(6) {
-    background: #fff9c4; /* Yellow for 0 */
+    background: #eeeeee; /* Grey for 0 */
 }
 
 .legend-color:nth-child(7) {
@@ -308,4 +343,34 @@ textarea:focus {
     border-top: 1px solid #d1d5da; /* Light gray border */
     margin: 15px 0; /* Add spacing above and below */
     opacity: 0.7; /* Slightly transparent */
+}
+
+/* Tags Checkboxes */
+fieldset {
+    border: none; /* Remove the border */
+    padding: 0;
+    margin: 0;
+}
+
+fieldset legend {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 14px;
+}
+
+#tagsCheckboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#tagsCheckboxes label {
+    font-size: 14px;
+    color: #24292e;
+    cursor: pointer;
+}
+
+#tagsCheckboxes input[type="checkbox"] {
+    margin-right: 5px;
 }

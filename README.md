@@ -3,25 +3,29 @@
 ## Local Setup
 
 1. Install dependencies:
-```bash
-npm install
-```
+   ```bash
+   npm install
+   ```
 
 2. Start the server:
-```bash
-npm start
-```
+   ```bash
+   npm start
+   ```
 
 3. Open browser: `http://localhost:3000`
+
+---
 
 ## Docker Setup
 
 1. Build and run:
-```bash
-docker-compose up -d
-```
+   ```bash
+   docker-compose up -d
+   ```
 
 2. Open browser: `http://localhost:3000`
+
+---
 
 ## Database Location
 
@@ -74,8 +78,6 @@ This document provides standard operating procedures (SOP) for maintaining and m
    sqlite3 data/emotions.db
    .schema emotions
    ```
-
----
 
 ## 3. Scanning the Code for Zero Vulnerabilities
 
@@ -169,6 +171,49 @@ This document provides standard operating procedures (SOP) for maintaining and m
 
 By following these steps, you can ensure the Emotion Tracker application remains secure, reliable, and easy to maintain.
 
+
+---
+
+## Database Migrations
+
+The application uses a simple migration system to manage database schema changes. Migrations are stored as `.sql` files in the `migrations` folder and are applied automatically when the server starts.
+
+### Steps to Add a New Migration
+
+1. **Create a New Migration File**:
+   - Navigate to the `migrations` folder:
+     ```bash
+     cd migrations
+     ```
+   - Create a new `.sql` file with a sequential name (e.g., `002_add_example_column.sql`):
+     ```bash
+     touch 002_add_example_column.sql
+     ```
+
+2. **Write the SQL Migration**:
+   - Open the file and add the SQL commands for the migration. For example:
+     ```sql
+     ALTER TABLE emotions ADD COLUMN example_column TEXT DEFAULT 'example';
+     ```
+
+3. **Restart the Server**:
+   - Restart the server to apply the migration:
+     ```bash
+     npm start
+     ```
+
+4. **Verify the Migration**:
+   - Check the database schema to ensure the migration was applied:
+     ```bash
+     sqlite3 data/emotions.db
+     .schema emotions
+     ```
+### Notes
+- Migrations are applied in the order of their filenames (e.g., `001_`, `002_`, etc.).
+- Each migration is applied only once and is tracked in the `migrations` table.
+- If a migration fails, check the server logs for error details.
+---
+
 # Emotion Tracker Application
 
 ## Features
@@ -222,6 +267,8 @@ This is a **test** note.
 ## Maintenance and Deployment
 
 Refer to the [SOP User Document](#sop-user-document) for instructions on maintaining and deploying the application.
+
+---
 
 ## API Documentation
 
@@ -303,7 +350,25 @@ curl -X GET http://localhost:3000/api/emotions
 
 ---
 
-### 2. Testing the `POST /api/emotions` Endpoint
+### 2. Testing the `
+- Command to generate hex code.
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))
+```
+
+Migration for Existing Plaintext Data
+If you have existing plaintext notes in the database, they will be re-encrypted when updated. To force re-encryption of all existing data:
+```bash
+node encrypt_existing_notes.js
+```
+Summary
+✅ Encryption is already implemented
+✅ Generate and store a secure 32-byte hex key
+✅ Update .env with the new key
+✅ Restart the server
+✅ Run migration script if you have existing plaintext data
+
+Keep your encryption key safe! Without it, encrypted data cannot be recovered.POST /api/emotions` Endpoint
 
 **Using Postman**:
 1. Open Postman and create a new request.
