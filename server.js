@@ -114,7 +114,7 @@ function runMigrations() {
 
 // Middleware
 app.use(helmet()); // Add security headers, including CSP
-app.use(bodyParser.json({ limit: '1kb' })); // Limit payload size to 1KB
+app.use(bodyParser.json({ limit: '1.1kb' })); // Limit payload size to 1.1KB
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors({ origin: '*' })); // Allow all origins
 
@@ -357,6 +357,84 @@ app.get('/api/search', (req, res) => {
 
         console.log(`Found ${results.length} matching notes.`);
         res.json(results);
+    });
+});
+
+// DELETE /api/emotions: Delete an entry for a specific date and tag
+app.delete('/api/emotions', [
+    body('date').isISO8601().withMessage('Invalid date format'),
+    body('tag').notEmpty().withMessage('Tag is required')
+], (req, res) => {
+    const { date, tag } = req.body;
+
+    if (!date || !tag) {
+        return res.status(400).json({ error: 'Date and tag are required to delete an entry.' });
+    }
+
+    console.log(`Deleting entry for date: ${date}, tag: ${tag}`);
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION', beginErr => {
+            if (beginErr) {
+                console.error('Error starting transaction:', beginErr.message);
+                return res.status(500).json({ error: 'Failed to start delete transaction.' });
+            }
+
+            db.run('DELETE FROM emotions WHERE date = ? AND tags = ?', [date, tag], function (err) {
+                if (err) {
+                    console.error('Error deleting entry:', err.message);
+                    return db.run('ROLLBACK', rollbackErr => {
+                        if (rollbackErr) {
+                            console.error('Error rolling back transaction:', rollbackErr.message);
+                        }
+                        res.status(500).json({ error: 'Failed to delete entry.' });
+                    });
+                }
+
+                if (this.changes === 0) {
+                    return db.run('ROLLBACK', rollbackErr => {
+                        if (rollbackErr) {
+                            console.error('Error rolling back transaction:', rollbackErr.message);
+                        }
+                        res.status(404).json({ error: 'No entry found for the specified date and tag.' });
+                    });
+                }
+
+                db.run('COMMIT', commitErr => {
+                    if (commitErr) {
+                        console.error('Error committing transaction:', commitErr.message);
+                        return res.status(500).json({ error: 'Failed to commit delete transaction.' });
+                    }
+
+                    console.log(`Entry deleted successfully for date: ${date}, tag: ${tag}`);
+                    res.json({ success: true });
+                });
+            });
+        });
+    });
+});
+
+// PATCH /api/emotions/modify-date: Modify the date of an existing entry
+app.patch('/api/emotions/modify-date', (req, res) => {
+    const { oldDate, newDate } = req.body;
+
+    if (!oldDate || !newDate) {
+        return res.status(400).json({ error: 'Both oldDate and newDate are required to modify an entry.' });
+    }
+
+    console.log(`Modifying entry date from ${oldDate} to ${newDate}`);
+    const sql = 'UPDATE emotions SET date = ? WHERE date = ?';
+    db.run(sql, [newDate, oldDate], function (err) {
+        if (err) {
+            console.error('Error modifying entry date:', err.message);
+            return res.status(500).json({ error: 'Failed to modify entry date.' });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'No entry found for the specified oldDate.' });
+        }
+
+        console.log(`Entry date modified successfully from ${oldDate} to ${newDate}`);
+        res.json({ success: true });
     });
 });
 

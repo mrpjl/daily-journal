@@ -272,7 +272,7 @@ button:hover {
 }
 
 .legend-color:nth-child(5) {
-    background: #ffcc80; /* Light orange for -1 */
+    background: #f8bbd0; /* Light pink for -1 */
 }
 
 .legend-color:nth-child(6) {
@@ -373,4 +373,41 @@ fieldset legend {
 
 #tagsCheckboxes input[type="checkbox"] {
     margin-right: 5px;
+}
+
+/* Notes Actions */
+#notesActions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+#notesActions button {
+    background: #d32f2f; /* Red for delete */
+    color: white;
+    padding: 4px 8px; /* Make buttons smaller */
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px; /* Reduce font size */
+    font-weight: 600;
+}
+
+#notesActions button#modifyDateButton {
+    background: #0366d6; /* Blue for modify */
+}
+
+#notesActions button#modifyDateButton:hover {
+    background: #024ea2; /* Darker blue on hover */
+}
+
+#notesActions button:hover {
+    opacity: 0.9;
+}
+
+.char-count {
+    text-align: right; /* Align text to the right */
+    font-size: 12px; /* Make the text smaller */
+    color: #b0b0b0; /* Use a lighter gray for less emphasis */
+    margin-top: 5px; /* Add some spacing above */
 }

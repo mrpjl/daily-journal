@@ -16,29 +16,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Attach the addEntry function to the button
     document.getElementById('addEntryButton').addEventListener('click', addEntry);
 
+    // Update character counter for notes
+    const notesInput = document.getElementById('notes');
+    const notesCounter = document.getElementById('notesCounter');
+    notesInput.addEventListener('input', () => {
+        notesCounter.textContent = `${notesInput.value.length}/1000 characters`;
+    });
+
     await renderHeatMap();
     console.log('Heatmap loaded successfully.');
 });
 
 function getEmotionColor(score) {
-    if (score === null) return '#ebedf0';
+    // if (score === null) return '#ebedf0'; // Neutral color for no data
+    if (score === null) return '#2c2c2c'; // Default dark background for no data
 
     // Assign distinct colors for each value from -5 to 5
     const colorPalette = {
-        '-5': '#b71c1c', // Dark red
-        '-4': '#d32f2f', // Red
-        '-3': '#f44336', // Light red
-        '-2': '#ff7043', // Orange
-        '-1': '#ffcc80', // Light orange
-         '0': '#ebedf0', // Neutral gray
-         '1': '#c8e6c9', // Light green
-         '2': '#81c784', // Green
-         '3': '#4caf50', // Dark green
-         '4': '#388e3c', // Deeper green
-         '5': '#1b5e20'  // Deepest green
+        // LIGHTER COLORS FOR EXTREMES
+        // '-5': '#b71c1c', // Dark red
+        // '-4': '#d32f2f', // Red
+        // '-3': '#f44336', // Light red
+        // '-2': '#ff7043', // Orange
+        // '-1': '#f8bbd0', // Light pink
+        //  '0': '#ebedf0', // Neutral gray
+        //  '1': '#c8e6c9', // Light green
+        //  '2': '#81c784', // Green
+        //  '3': '#4caf50', // Dark green
+        //  '4': '#388e3c', // Deeper green
+        //  '5': '#1b5e20'  // Deepest green contrast
+
+        // DARKER COLORS FOR EXTREMES
+        '-5': '#8b0000', // Dark red
+        '-4': '#a52a2a', // Brownish red
+        '-3': '#cd5c5c', // Light coral
+        '-2': '#d2691e', // Chocolate for -2
+        '-1': '#f4a460', // Light orange
+         '0': '#3a3a3a', // Neutral dark gray
+         '1': '#556b2f', // Olive green
+         '2': '#6b8e23', // Dark olive green
+         '3': '#228b22', // Forest green
+         '4': '#006400', // Dark green
+         '5': '#013220'  // Deepest green
     };
 
-    return colorPalette[score] || '#ebedf0'; // Default to neutral if score is invalid
+    // return colorPalette[score] || '#ebedf0'; // Default to neutral if score is invalid
+    return colorPalette[score] || '#2c2c2c'; // Default to dark background if score is invalid
 }
 
 function getEmotionState(score) {
@@ -100,6 +123,7 @@ async function saveData(date, score, notes, tags) {
 
 async function addEntry() {
     const dateInput = document.getElementById('date').value;
+    const formattedDate = ensureDateFormat(dateInput); // Ensure the date is in "YYYY-MM-DD"
     const emotionInput = parseInt(document.getElementById('emotion').value);
     const notesInput = document.getElementById('notes').value;
 
@@ -109,7 +133,7 @@ async function addEntry() {
         .join('-');
 
     console.log('Adding new entry...');
-    if (!dateInput || isNaN(emotionInput)) {
+    if (!formattedDate || isNaN(emotionInput)) {
         console.warn('Validation failed: Missing date or invalid emotion score.');
         alert('Please fill in all fields');
         return;
@@ -128,7 +152,7 @@ async function addEntry() {
     }
 
     try {
-        await saveData(dateInput, emotionInput, notesInput, tags);
+        await saveData(formattedDate, emotionInput, notesInput, tags);
         await renderHeatMap();
         console.log('New entry added successfully.');
         alert('Entry added successfully!');
@@ -317,27 +341,145 @@ async function renderHeatMap() {
 }
 
 function renderMarkdown(text) {
-    // Replace newlines with <br> for proper rendering
-    const formattedText = text
-        .replace(/\n/g, '<br>')
+    if (!text) return '';
+
+    // Sanitize and format text
+    const sanitizedText = text
+        .replace(/</g, '&lt;') // Escape HTML tags
+        .replace(/>/g, '&gt;');
+
+    // Replace Markdown syntax with HTML tags
+    const formattedText = sanitizedText
+        .replace(/\n/g, '<br>') // Convert newlines to <br>
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') // Bold (**text**)
-        .replace(/\*(.+?)\*/g, '<em>$1</em>'); // Italic (*text*)
+        .replace(/\*(.+?)\*/g, '<em>$1</em>') // Italic (*text*)
+        .replace(/`(.+?)`/g, '<code>$1</code>'); // Inline code (`text`)
+
     return formattedText;
+}
+
+async function deleteEntry(date) {
+    const formattedDate = ensureDateFormat(date); // Ensure the date is in "YYYY-MM-DD"
+    console.log(`Deleting entry for date: ${formattedDate}`);
+    try {
+        const response = await fetch(`${API_URL}/emotions`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ date: formattedDate }), // Use the formatted date
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete entry');
+        }
+
+        console.log('Entry deleted successfully.');
+        alert('Entry deleted successfully!');
+        await renderHeatMap();
+        displayNotes(formattedDate, []); // Clear the notes section for the deleted date
+    } catch (error) {
+        console.error('Error deleting entry:', error);
+        alert('Failed to delete entry. Make sure the server is running.');
+    }
+}
+
+async function deleteEntryByTag(date, tag) {
+    const formattedDate = ensureDateFormat(date); // Ensure the date is in "YYYY-MM-DD"
+    console.log(`Deleting entry for date: ${formattedDate}, tag: ${tag}`); // Use the date directly
+    try {
+        const payload = { date: formattedDate, tag }; // Use the date directly
+        console.log('Request payload:', payload); // Log the payload for debugging
+
+        const response = await fetch(`${API_URL}/emotions`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload), // Use the formatted date
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to delete entry');
+        }
+
+        console.log('Entry deleted successfully.');
+        alert('Entry deleted successfully!');
+
+        // Refresh the UI after deletion
+        await renderHeatMap(); // Refresh the heatmap
+        displayNotes(formattedDate, []); // Clear the notes section for the deleted date
+    } catch (error) {
+        console.error('Error deleting entry:', error.message);
+        alert(`Failed to delete entry: ${error.message}`);
+    }
+}
+
+// Ensure this function is defined in the global scope
+function promptDeleteEntry(date, tag) {
+    const formattedDate = ensureDateFormat(date); // Ensure the date is in "YYYY-MM-DD"
+    if (!formattedDate || !tag) {
+        console.error('Date or tag is missing:', { date, tag });
+        alert('Date and tag are required to delete an entry.');
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete the entry for tag "${tag}" on ${formattedDate}?`)) {
+        deleteEntryByTag(formattedDate, tag); // Use the date directly
+    }
+}
+
+// Modifies the date of an existing entry.
+async function modifyEntryDate(oldDate, newDate) {
+    console.log(`Modifying entry date from ${oldDate} to ${newDate}`);
+    try {
+        const response = await fetch(`${API_URL}/emotions/modify-date`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ oldDate, newDate }), // Send both old and new dates
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to modify entry date');
+        }
+
+        console.log('Entry date modified successfully.');
+        alert('Entry date modified successfully!');
+        await renderHeatMap(); // Refresh the heatmap after modification
+    } catch (error) {
+        console.error('Error modifying entry date:', error);
+        alert('Failed to modify entry date. Make sure the server is running.');
+    }
+}
+
+// Ensure the `promptModifyDate` function calls `modifyEntryDate` correctly
+function promptModifyDate(oldDate) {
+    const formattedOldDate = ensureDateFormat(oldDate); // Ensure the old date is in "YYYY-MM-DD"
+    const newDate = prompt('Enter the new date (YYYY-MM-DD):', formattedOldDate); // Use the old date directly
+    if (newDate && newDate !== formattedOldDate) {
+        modifyEntryDate(formattedOldDate, newDate); // Use the dates directly
+    }
 }
 
 function displayNotes(date, notesList) {
     const selectedDateElement = document.getElementById('selectedDate');
     const selectedNotesElement = document.getElementById('selectedNotes');
+    const notesActionsElement = document.getElementById('notesActions');
 
     selectedDateElement.textContent = `Selected Date: ${date}`;
+    selectedNotesElement.innerHTML = ''; // Clear previous notes
+    notesActionsElement.innerHTML = ''; // Clear previous actions
 
     // Group notes by tags
     const groupedNotes = notesList.reduce((acc, note) => {
         const tag = note.tags || 'No tags';
         if (!acc[tag]) acc[tag] = [];
         acc[tag].push({
-            notes: note.notes,
-            emotionState: getEmotionState(note.score) // Include emotion state
+            notes: renderMarkdown(note.notes), // Ensure Markdown is rendered here
+            emotionState: getEmotionState(note.score),
         });
         return acc;
     }, {});
@@ -351,13 +493,30 @@ function displayNotes(date, notesList) {
             <ul>
                 ${notes.map(note => `
                     <li>
-                        ${renderMarkdown(note.notes)}
+                        ${note.notes} <!-- Rendered Markdown -->
                     </li>
                 `).join('')}
             </ul>
             <hr>
         `)
         .join('');
+
+    // Add delete buttons dynamically for each tag
+    Object.keys(groupedNotes).forEach(tag => {
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = `Delete Entry (${tag})`;
+        deleteButton.addEventListener('click', () => promptDeleteEntry(date, tag));
+        notesActionsElement.appendChild(deleteButton);
+    });
+
+    // Add modify date button only if there are entries
+    if (notesList.length > 0) {
+        const modifyButton = document.createElement('button');
+        modifyButton.id = 'modifyDateButton'; // Add ID for styling
+        modifyButton.textContent = 'Modify Date';
+        modifyButton.addEventListener('click', () => promptModifyDate(date));
+        notesActionsElement.appendChild(modifyButton);
+    }
 }
 
 async function searchNotes(query) {
@@ -426,3 +585,20 @@ document.getElementById('refreshButton').addEventListener('click', () => {
     document.getElementById('searchInput').value = ''; // Clear the search input field
     document.getElementById('searchResults').innerHTML = ''; // Clear the search results
 });
+
+/**
+ * Ensures the date is in the "YYYY-MM-DD" format.
+ * @param {string} date - The date string to format.
+ * @returns {string} - The formatted date string.
+ */
+function ensureDateFormat(date) {
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+        console.error(`Invalid date: ${date}`);
+        return null;
+    }
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}

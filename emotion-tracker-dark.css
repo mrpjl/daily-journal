@@ -1,0 +1,416 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body Styling */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    padding: 20px;
+    background: #121212; /* Dark background */
+    color: #e0e0e0; /* Light text color */
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #1e1e1e; /* Darker container background */
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Header */
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #ffffff; /* White header text */
+    font-weight: 600;
+}
+
+/* Input Section */
+.input-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #2c2c2c; /* Darker input section background */
+    border-radius: 6px;
+    border: 1px solid #3a3a3a; /* Subtle border */
+}
+
+.input-section h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #ffffff; /* White text */
+    font-weight: 600;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #e0e0e0; /* Light label text */
+    font-size: 14px;
+}
+
+input[type="date"],
+input[type="number"],
+input[type="text"] {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #3a3a3a; /* Subtle border */
+    border-radius: 6px;
+    font-size: 14px;
+    background: #1e1e1e; /* Dark input background */
+    color: #e0e0e0; /* Light input text */
+}
+
+input[type="date"]:focus,
+input[type="number"]:focus,
+input[type="text"]:focus {
+    outline: none;
+    border-color: #bb86fc; /* Purple focus border */
+    box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.2);
+}
+
+button {
+    background: #03dac6; /* Teal button background */
+    color: #000000; /* Dark button text */
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+button:hover {
+    background: #018786; /* Darker teal on hover */
+}
+
+/* Search Section */
+.search-section {
+    margin-top: 20px;
+    padding: 20px;
+    background: #2c2c2c; /* Darker search section background */
+    border-radius: 6px;
+    border: 1px solid #3a3a3a;
+}
+
+.search-section h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #ffffff; /* White text */
+    font-weight: 600;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #1e1e1e;
+    color: #e0e0e0;
+    margin-bottom: 10px;
+}
+
+#searchButton {
+    background: #bb86fc; /* Purple button background */
+    color: #000000;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#searchButton:hover {
+    background: #9a67ea; /* Darker purple on hover */
+}
+
+#searchResults {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #e0e0e0; /* Light text */
+}
+
+/* Heat Map Container */
+.heat-map-container {
+    margin-top: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 10px;
+}
+
+/* Heat Map Wrapper */
+.heat-map-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0%;
+    justify-content: center;
+    max-width: 100%;
+}
+
+/* Month Section */
+.month-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    width: 95px;
+}
+
+.month-label {
+    font-size: 10px;
+    font-weight: normal;
+    color: #b0b0b0; /* Lighter gray for less emphasis */
+    text-align: center;
+}
+
+/* Month Box */
+.month-box {
+    display: grid;
+    grid-template-rows: repeat(7, 1fr);
+    grid-auto-flow: column;
+    gap: 2px;
+}
+
+/* Heat Map */
+.heat-map {
+    display: grid;
+    grid-template-rows: repeat(7, 1fr);
+    grid-auto-flow: column;
+    gap: 3px;
+}
+
+/* Day Cell */
+.day-cell {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: #2c2c2c; /* Default dark background for day cells */
+    cursor: pointer;
+    position: relative;
+}
+
+/* Tooltip for Day Cell */
+.tooltip {
+    position: fixed;
+    background: #333333; /* Dark tooltip background */
+    color: #ffffff; /* White tooltip text */
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: normal;
+    font-size: 11px;
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 300px;
+    word-wrap: break-word;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+/* Ensure tooltip stays within the viewport */
+.day-cell:hover .tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    left: max(10px, min(50%, calc(100vw - 10px - 200px))); /* Adjust position dynamically */
+}
+
+/* Legend */
+.legend {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 10px 0;
+    font-size: 11px;
+    color: #b0b0b0; /* Lighter gray */
+}
+
+.legend-colors {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+.legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+/* Update legend colors to match dark mode heatmap */
+.legend-color:nth-child(1) {
+    background: #8b0000; /* Dark red for -5 */
+}
+
+.legend-color:nth-child(2) {
+    background: #a52a2a; /* Brownish red for -4 */
+}
+
+.legend-color:nth-child(3) {
+    background: #cd5c5c; /* Light coral for -3 */
+}
+
+.legend-color:nth-child(4) {
+    background: #d2691e; /* Chocolate for -2 */
+}
+
+.legend-color:nth-child(5) {
+    background: #f4a460; /* Light orange for -1 */
+}
+
+.legend-color:nth-child(6) {
+    background: #3a3a3a; /* Neutral dark gray for 0 */
+}
+
+.legend-color:nth-child(7) {
+    background: #556b2f; /* Olive green for 1 */
+}
+
+.legend-color:nth-child(8) {
+    background: #6b8e23; /* Dark olive green for 2 */
+}
+
+.legend-color:nth-child(9) {
+    background: #228b22; /* Forest green for 3 */
+}
+
+.legend-color:nth-child(10) {
+    background: #006400; /* Dark green for 4 */
+}
+
+.legend-color:nth-child(11) {
+    background: #013220; /* Deepest green for 5 */
+}
+
+/* Notes Section */
+.notes-section {
+    margin-top: 20px;
+    padding: 20px;
+    background: #2c2c2c;
+    border-radius: 6px;
+    border: 1px solid #3a3a3a;
+}
+
+.notes-section h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.notes-section p {
+    font-size: 14px;
+    color: #b0b0b0;
+    margin: 5px 0;
+}
+
+textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #1e1e1e;
+    color: #e0e0e0;
+    resize: vertical;
+    min-height: 60px;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #bb86fc;
+    box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.2);
+}
+
+.notes-section hr {
+    border: none;
+    border-top: 1px solid #3a3a3a;
+    margin: 15px 0;
+    opacity: 0.7;
+}
+
+/* Tags Checkboxes */
+fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+fieldset legend {
+    font-weight: 600;
+    color: #e0e0e0;
+    font-size: 14px;
+}
+
+#tagsCheckboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#tagsCheckboxes label {
+    font-size: 14px;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+#tagsCheckboxes input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+/* Notes Actions */
+#notesActions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+#notesActions button {
+    background: #d32f2f;
+    color: #000000;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#notesActions button#modifyDateButton {
+    background: #bb86fc;
+}
+
+#notesActions button#modifyDateButton:hover {
+    background: #9a67ea;
+}
+
+#notesActions button:hover {
+    opacity: 0.9;
+}
+
+input[type="date"] {
+    color-scheme: dark;
+}
+
+.char-count {
+    text-align: right; /* Align text to the right */
+    font-size: 12px; /* Make the text smaller */
+    color: #b0b0b0; /* Use a lighter gray for less emphasis */
+    margin-top: 5px; /* Add some spacing above */
+}

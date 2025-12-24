@@ -6,3 +6,4 @@ data/
 localhost*
 index.css
 index.js
+package-lock.json

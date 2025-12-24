@@ -65,11 +65,11 @@ raw_rows = cursor.fetchall()
 encryption_key = _derive_key(_read_raw_key())
 for row in raw_rows:
     row = list(row)
-    # print("Raw note:", row[3])
+    print("Raw note:", row[3])
     # row[3] = decrypt_note(row[3], encryption_key)
     # only print failed decrypted notes
     # if row[3].startswith("<decryption failed:"):
-    print(tuple(row))
+    # print(tuple(row))
 
 IV_LENGTH = 16 # AES block size
 
@@ -89,7 +89,7 @@ IV_LENGTH = 16 # AES block size
 # # conn.commit()
 
 # delete row of date 2025-10-20
-# cursor.execute("DELETE FROM emotions WHERE date = '2025-07-16'")
+# cursor.execute("DELETE FROM emotions WHERE date = '2025-10-01'")
 # conn.commit()
 
 # # Close the connection
