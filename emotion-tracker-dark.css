@@ -414,3 +414,97 @@ input[type="date"] {
     color: #b0b0b0; /* Use a lighter gray for less emphasis */
     margin-top: 5px; /* Add some spacing above */
 }
+
+/* Bookmark Card */
+.bookmark-card {
+    background-color: #2c2c2c; /* Match the input section background */
+    border: 1px solid #3a3a3a; /* Subtle border for separation */
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+}
+
+.bookmark-card h5 {
+    margin: 0 0 10px;
+    font-size: 1em; /* Match the font size of the main page */
+    color: #ffcc00; /* Highlighted title color */
+    flex-shrink: 0; /* Prevent title from shrinking */
+    white-space: normal; /* Allow title to wrap */
+    word-wrap: break-word; /* Break long words in the title */
+    overflow-wrap: break-word; /* Ensure wrapping for long titles */
+}
+
+.bookmark-card a {
+    color: #4ea1f3; /* Light blue for links */
+    text-decoration: none;
+    word-wrap: break-word;
+    font-size: 0.9em; /* Slightly smaller font for URLs */
+}
+
+.bookmark-card a:hover {
+    text-decoration: underline;
+}
+
+.bookmark-card .date {
+    font-size: 0.9em;
+    color: #888; /* Subtle text for dates */
+}
+
+.bookmarks-container {
+    max-width: 880px; /* Match the main page container width */
+    margin: 0 auto;
+    background: #1e1e1e; /* Darker container background */
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    color: #e0e0e0; /* Light text for readability */
+}
+
+/* Adjust the search section to match the main page */
+.search-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #2c2c2c; /* Darker search section background */
+    border-radius: 6px;
+    border: 1px solid #3a3a3a;
+}
+
+#bookmarkSearchInput {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #1e1e1e;
+    color: #e0e0e0;
+}
+
+/* Top Right Navigation for Bookmarks */
+.top-right-nav {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.bookmarks-link {
+    color: #ffcc00; /* Yellow color for contrast in dark mode */
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1em;
+}
+
+.bookmarks-link:hover {
+    text-decoration: underline;
+}
+
+nav a {
+    color: #ffcc00; /* Yellow color for contrast in dark mode */
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1em;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}

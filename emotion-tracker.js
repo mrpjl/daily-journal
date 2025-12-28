@@ -1,30 +1,159 @@
 const START_DATE = new Date('2025-05-01');
 const API_URL = 'http://localhost:3000/api'; // Ensure this matches the server's base URL
 
+/**
+ * Decodes HTML entities in a string.
+ * @param {string} text - The text to decode.
+ * @returns {string} - The decoded text.
+ */
+function decodeHtmlEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+}
+
+/**
+ * Ensures the date is in the format "YYYY-MM-DD" in local time.
+ * @param {string} date - The date string to format.
+ * @returns {string} - The formatted date string in local time.
+ */
+function ensureDateFormat(date) {
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate)) {
+        throw new Error('Invalid date format');
+    }
+    // Format the date in local time as "YYYY-MM-DD"
+    return new Date(parsedDate.getTime() - parsedDate.getTimezoneOffset() * 60000)
+        .toISOString()
+        .split('T')[0];
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Application initialized. Loading heatmap...');
-    
-    // Add meta description for SEO
+	// Add meta description for SEO
     const metaDescription = document.createElement('meta');
     metaDescription.name = 'description';
     metaDescription.content = 'Track your daily emotions and visualize them in a heatmap. Add notes and tags to reflect on your emotional journey.';
     document.head.appendChild(metaDescription);
+    console.log('Application initialized.');
 
-    document.getElementById('date').valueAsDate = new Date();
+    // Ensure the date input exists before setting its value
+    const dateInput = document.getElementById('date');
+    if (dateInput) {
+        dateInput.valueAsDate = new Date();
+    }
 
     // Attach the addEntry function to the button
-    document.getElementById('addEntryButton').addEventListener('click', addEntry);
-
+    const addEntryButton = document.getElementById('addEntryButton');
+    if (addEntryButton) {
+        addEntryButton.addEventListener('click', addEntry);
+    }
     // Update character counter for notes
     const notesInput = document.getElementById('notes');
     const notesCounter = document.getElementById('notesCounter');
+	if (notesInput) {
     notesInput.addEventListener('input', () => {
         notesCounter.textContent = `${notesInput.value.length}/1000 characters`;
     });
+	}
 
-    await renderHeatMap();
-    console.log('Heatmap loaded successfully.');
+    // Fetch and display bookmarks if on the bookmarks page
+    const bookmarksList = document.getElementById('bookmarksList');
+    const bookmarkSearchInput = document.getElementById('bookmarkSearchInput');
+
+    if (bookmarksList) {
+        let bookmarks = []; // Store bookmarks for filtering
+
+        async function fetchBookmarks() {
+            try {
+                const response = await fetch(`${API_URL}/bookmarks`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch bookmarks');
+                }
+                bookmarks = await response.json();
+                renderBookmarks(bookmarks);
+            } catch (error) {
+                console.error('Error fetching bookmarks:', error);
+                bookmarksList.innerHTML = '<p>Error loading bookmarks.</p>';
+            }
+        }
+
+        function renderBookmarks(bookmarksToRender) {
+            bookmarksList.innerHTML = '';
+            if (bookmarksToRender.length === 0) {
+                bookmarksList.innerHTML = '<p>No bookmarks available.</p>';
+            } else {
+                bookmarksToRender.forEach(bookmark => {
+                    bookmark.links.forEach(link => {
+                        const listItem = document.createElement('div');
+                        listItem.className = 'bookmark-card';
+
+                        // Add title
+                        const titleElement = document.createElement('h5');
+                        titleElement.textContent = decodeHtmlEntities(link.title);
+                        listItem.appendChild(titleElement);
+
+                        // Add URL
+                        if (link.url) {
+                            const linkElement = document.createElement('a');
+                            linkElement.href = decodeHtmlEntities(link.url);
+                            linkElement.target = '_blank';
+                            linkElement.rel = 'noopener noreferrer';
+                            linkElement.textContent = decodeHtmlEntities(link.url);
+                            listItem.appendChild(linkElement);
+                        }
+
+                        bookmarksList.appendChild(listItem);
+                    });
+                });
+            }
+        }
+
+        // On-the-fly search
+        bookmarkSearchInput?.addEventListener('input', () => {
+            const query = bookmarkSearchInput.value.trim().toLowerCase();
+            const filteredBookmarks = bookmarks.flatMap(bookmark =>
+                bookmark.links
+                    .filter(link =>
+                        link.title.toLowerCase().includes(query) || link.url.toLowerCase().includes(query)
+                    )
+                    .map(link => ({ date: bookmark.date, links: [link] })) // Include only matching links
+            );
+            renderBookmarks(filteredBookmarks);
+        });
+
+        // Initial fetch
+        await fetchBookmarks();
+    }
+
+    // Load heatmap if on the main page
+    const heatMapWrapper = document.querySelector('.heat-map-wrapper');
+    if (heatMapWrapper && typeof renderHeatMap === 'function') {
+        await renderHeatMap();
+        console.log('Heatmap loaded successfully.');
+    }
+
+    // Attach search functionality if search elements exist
+    const searchButton = document.getElementById('searchButton');
+    const refreshButton = document.getElementById('refreshButton');
+    if (searchButton && refreshButton) {
+        searchButton.addEventListener('click', () => {
+            const query = document.getElementById('searchInput')?.value.trim();
+            if (!query) {
+                alert('Please enter a search query.');
+                return;
+            }
+            searchNotes(query);
+        });
+
+        refreshButton.addEventListener('click', () => {
+            console.log('Refreshing search results...');
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            if (searchInput) searchInput.value = ''; // Clear the search input field
+            if (searchResults) searchResults.innerHTML = ''; // Clear the search results
+        });
+    }
 });
 
 function getEmotionColor(score) {
@@ -385,18 +514,18 @@ async function deleteEntry(date) {
 }
 
 async function deleteEntryByTag(date, tag) {
-    const formattedDate = ensureDateFormat(date); // Ensure the date is in "YYYY-MM-DD"
-    console.log(`Deleting entry for date: ${formattedDate}, tag: ${tag}`); // Use the date directly
+    const formattedDate = ensureDateFormat(date); // Ensure the date is in "YYYY-MM-DD" in local time
+    console.log(`Deleting entry for date: ${formattedDate}, tag: ${tag}`);
     try {
-        const payload = { date: formattedDate, tag }; // Use the date directly
-        console.log('Request payload:', payload); // Log the payload for debugging
+        const payload = { date: formattedDate, tag };
+        console.log('Request payload:', payload);
 
         const response = await fetch(`${API_URL}/emotions`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(payload), // Use the formatted date
+            body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
@@ -408,7 +537,7 @@ async function deleteEntryByTag(date, tag) {
         alert('Entry deleted successfully!');
 
         // Refresh the UI after deletion
-        await renderHeatMap(); // Refresh the heatmap
+        await renderHeatMap();
         displayNotes(formattedDate, []); // Clear the notes section for the deleted date
     } catch (error) {
         console.error('Error deleting entry:', error.message);
@@ -432,14 +561,16 @@ function promptDeleteEntry(date, tag) {
 
 // Modifies the date of an existing entry.
 async function modifyEntryDate(oldDate, newDate) {
-    console.log(`Modifying entry date from ${oldDate} to ${newDate}`);
+    const formattedOldDate = ensureDateFormat(oldDate); // Ensure the old date is in "YYYY-MM-DD" in local time
+    const formattedNewDate = ensureDateFormat(newDate); // Ensure the new date is in "YYYY-MM-DD" in local time
+    console.log(`Modifying entry date from ${formattedOldDate} to ${formattedNewDate}`);
     try {
         const response = await fetch(`${API_URL}/emotions/modify-date`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ oldDate, newDate }), // Send both old and new dates
+            body: JSON.stringify({ oldDate: formattedOldDate, newDate: formattedNewDate }),
         });
 
         if (!response.ok) {
@@ -568,37 +699,4 @@ function displaySearchResults(results, query) {
             }).join('')}
         </ul>
     `;
-}
-
-// Attach search functionality
-document.getElementById('searchButton').addEventListener('click', () => {
-    const query = document.getElementById('searchInput').value.trim();
-    if (!query) {
-        alert('Please enter a search query.');
-        return;
-    }
-    searchNotes(query);
-});
-
-document.getElementById('refreshButton').addEventListener('click', () => {
-    console.log('Refreshing search results...');
-    document.getElementById('searchInput').value = ''; // Clear the search input field
-    document.getElementById('searchResults').innerHTML = ''; // Clear the search results
-});
-
-/**
- * Ensures the date is in the "YYYY-MM-DD" format.
- * @param {string} date - The date string to format.
- * @returns {string} - The formatted date string.
- */
-function ensureDateFormat(date) {
-    const parsedDate = new Date(date);
-    if (isNaN(parsedDate.getTime())) {
-        console.error(`Invalid date: ${date}`);
-        return null;
-    }
-    const year = parsedDate.getFullYear();
-    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(parsedDate.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
 }

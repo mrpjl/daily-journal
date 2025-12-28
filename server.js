@@ -243,7 +243,7 @@ app.get('/api/emotions', (req, res) => {
             if (!acc[row.date]) acc[row.date] = [];
             acc[row.date].push({
                 score: row.score,
-                notes: decrypt(row.notes),
+                notes: decrypt(row.notes), // Decrypt notes before sending
                 tags: row.tags
             });
             return acc;
@@ -351,7 +351,7 @@ app.get('/api/search', (req, res) => {
         const results = rows
             .map(row => ({
                 date: row.date,
-                notes: decrypt(row.notes)
+                notes: decrypt(row.notes) // Decrypt notes before filtering
             }))
             .filter(entry => (entry.notes || '').toLowerCase().includes(lowerQuery));
 
@@ -362,16 +362,20 @@ app.get('/api/search', (req, res) => {
 
 // DELETE /api/emotions: Delete an entry for a specific date and tag
 app.delete('/api/emotions', [
-    body('date').isISO8601().withMessage('Invalid date format'),
+    body('date').isISO8601().withMessage('Invalid date format'), // Validate date format
     body('tag').notEmpty().withMessage('Tag is required')
 ], (req, res) => {
-    const { date, tag } = req.body;
-
-    if (!date || !tag) {
-        return res.status(400).json({ error: 'Date and tag are required to delete an entry.' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
     }
 
-    console.log(`Deleting entry for date: ${date}, tag: ${tag}`);
+    const { date, tag } = req.body;
+
+    // Convert the incoming date to UTC format
+    const utcDate = new Date(date).toISOString().split('T')[0];
+    console.log(`Received delete request for UTC date: ${utcDate}, tag: ${tag}`);
+
     db.serialize(() => {
         db.run('BEGIN TRANSACTION', beginErr => {
             if (beginErr) {
@@ -379,7 +383,7 @@ app.delete('/api/emotions', [
                 return res.status(500).json({ error: 'Failed to start delete transaction.' });
             }
 
-            db.run('DELETE FROM emotions WHERE date = ? AND tags = ?', [date, tag], function (err) {
+            db.run('DELETE FROM emotions WHERE date = ? AND tags = ?', [utcDate, tag], function (err) {
                 if (err) {
                     console.error('Error deleting entry:', err.message);
                     return db.run('ROLLBACK', rollbackErr => {
@@ -391,6 +395,7 @@ app.delete('/api/emotions', [
                 }
 
                 if (this.changes === 0) {
+                    console.warn(`No entry found for date: ${utcDate} and tag: ${tag}`);
                     return db.run('ROLLBACK', rollbackErr => {
                         if (rollbackErr) {
                             console.error('Error rolling back transaction:', rollbackErr.message);
@@ -405,7 +410,7 @@ app.delete('/api/emotions', [
                         return res.status(500).json({ error: 'Failed to commit delete transaction.' });
                     }
 
-                    console.log(`Entry deleted successfully for date: ${date}, tag: ${tag}`);
+                    console.log(`Entry deleted successfully for date: ${utcDate}, tag: ${tag}`);
                     res.json({ success: true });
                 });
             });
@@ -421,9 +426,13 @@ app.patch('/api/emotions/modify-date', (req, res) => {
         return res.status(400).json({ error: 'Both oldDate and newDate are required to modify an entry.' });
     }
 
-    console.log(`Modifying entry date from ${oldDate} to ${newDate}`);
+    // Convert both dates to UTC format
+    const utcOldDate = new Date(oldDate).toISOString().split('T')[0];
+    const utcNewDate = new Date(newDate).toISOString().split('T')[0];
+    console.log(`Modifying entry date from ${utcOldDate} to ${utcNewDate}`);
+
     const sql = 'UPDATE emotions SET date = ? WHERE date = ?';
-    db.run(sql, [newDate, oldDate], function (err) {
+    db.run(sql, [utcNewDate, utcOldDate], function (err) {
         if (err) {
             console.error('Error modifying entry date:', err.message);
             return res.status(500).json({ error: 'Failed to modify entry date.' });
@@ -433,8 +442,34 @@ app.patch('/api/emotions/modify-date', (req, res) => {
             return res.status(404).json({ error: 'No entry found for the specified oldDate.' });
         }
 
-        console.log(`Entry date modified successfully from ${oldDate} to ${newDate}`);
+        console.log(`Entry date modified successfully from ${utcOldDate} to ${utcNewDate}`);
         res.json({ success: true });
+    });
+});
+
+// API route to fetch bookmarked notes
+app.get('/api/bookmarks', (req, res) => {
+    db.all('SELECT date, notes, tags FROM emotions WHERE tags LIKE ?', ['%bookmark%'], (err, rows) => {
+        if (err) {
+            console.error('Error fetching bookmarks:', err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        const bookmarks = rows.map(row => {
+            const decryptedNotes = decrypt(row.notes);
+            const links = decryptedNotes.split('\n').map(line => {
+                const [title, url] = line.split(/:(.+)/).map(part => part?.trim()); // Split and trim both parts
+                return {
+                    title: title || 'Untitled', // Use 'Untitled' if no title is provided
+                    url: url || '' // Use an empty string if no URL is provided
+                };
+            });
+            return {
+                date: row.date,
+                links // Array of title-URL pairs
+            };
+        });
+        console.log(`Fetched ${bookmarks.length} dates.`);
+        res.json(bookmarks);
     });
 });
 

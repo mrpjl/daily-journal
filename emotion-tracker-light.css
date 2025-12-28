@@ -411,3 +411,90 @@ fieldset legend {
     color: #b0b0b0; /* Use a lighter gray for less emphasis */
     margin-top: 5px; /* Add some spacing above */
 }
+
+/* Bookmarks Page Styles */
+.bookmarks-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #333; /* Dark text for light theme */
+}
+
+.bookmark-card {
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff; /* Light background */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bookmark-card .bookmark-row {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between title and URL */
+    flex-wrap: wrap; /* Ensure wrapping for smaller screens */
+}
+
+.bookmark-card h5 {
+    margin: 0;
+    font-size: 0.9em; /* Reduced title size */
+    color: #333; /* Dark title color */
+    flex-shrink: 0; /* Prevent title from shrinking */
+    white-space: normal; /* Allow title to wrap */
+    word-wrap: break-word; /* Break long words in the title */
+    overflow-wrap: break-word; /* Ensure wrapping for long titles */
+}
+
+.bookmark-card a {
+    color: #007BFF; /* Blue for links */
+    text-decoration: none;
+    word-wrap: break-word;
+    font-size: 0.9em; /* Slightly smaller font for URLs */
+}
+
+.bookmark-card a:hover {
+    text-decoration: underline;
+}
+
+.bookmark-card .date {
+    font-size: 0.8em;
+    color: #666; /* Subtle text for dates */
+    margin-top: 5px;
+}
+
+#bookmarksList {
+    margin-top: 20px; /* Add space between the search bar and the bookmark cards */
+}
+
+/* Top Right Navigation for Bookmarks Link */
+.top-right-nav {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.bookmarks-link {
+    color: #ffcc00; /* Yellow color */
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1em;
+}
+
+.bookmarks-link:hover {
+    text-decoration: underline;
+}
+
+/* Navigation Links */
+nav a {
+    color: #007BFF; /* Blue color for contrast in light mode */
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1em;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
