@@ -1,4 +1,4 @@
-const START_DATE = new Date('2025-05-01');
+const START_DATE = new Date('2026-01-01');
 const API_URL = 'http://localhost:3000/api'; // Ensure this matches the server's base URL
 
 /**
